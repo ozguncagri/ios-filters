@@ -1,0 +1,26 @@
+{
+	"minimalBlacklists": [
+		"https://raw.githubusercontent.com/EnergizedProtection/block/master/ultimate/formats/domains.txt"
+	],
+	"fullBlacklists": [
+		"https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
+		"https://mirror1.malwaredomains.com/files/justdomains",
+		"http://sysctl.org/cameleon/hosts",
+		"https://s3.amazonaws.com/lists.disconnect.me/simple_tracking.txt",
+		"https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt",
+		"https://hosts-file.net/ad_servers.txt",
+		"https://raw.githubusercontent.com/BlackJack8/iOSAdblockList/master/Hosts.txt",
+		"https://raw.githubusercontent.com/EnergizedProtection/block/master/ultimate/formats/domains.txt",
+		"https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn-social/hosts",
+		"https://raw.githubusercontent.com/mtxadmin/ublock/master/hosts.txt",
+		"https://gist.githubusercontent.com/anudeepND/adac7982307fec6ee23605e281a57f1a/raw/5b8582b906a9497624c3f3187a49ebc23a9cf2fb/Test.txt",
+		"http://www.malwaredomainlist.com/hostslist/hosts.txt",
+		"https://ozguncagri.com/ios-filters/BlackListedDomains.txt"
+	],
+	"spotifyBlacklists": [
+		"https://ozguncagri.com/ios-filters/SpotifyAdServices.txt"
+	],
+	"whitelists": [
+		"https://ozguncagri.com/ios-filters/WhiteListedDomains.txt"
+	]
+}
