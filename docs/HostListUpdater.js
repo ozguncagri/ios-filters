@@ -2,37 +2,28 @@
 // These must be at the very top of the file. Do not edit.
 // always-run-in-app: true; icon-color: green;
 // icon-glyph: download;
-const blacklistedDomains = [
-	// PiHole Lists
-	"https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
-	"https://mirror1.malwaredomains.com/files/justdomains",
-	"http://sysctl.org/cameleon/hosts",
-	"https://s3.amazonaws.com/lists.disconnect.me/simple_tracking.txt",
-	"https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt",
-	"https://hosts-file.net/ad_servers.txt",
+let welcomeInteraction = new Alert()
 
-	// My Custom Lists
-	"https://raw.githubusercontent.com/BlackJack8/iOSAdblockList/master/Hosts.txt",
-	"https://raw.githubusercontent.com/EnergizedProtection/block/master/ultimate/formats/domains.txt",
-	"https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn-social/hosts",
-	"https://raw.githubusercontent.com/mtxadmin/ublock/master/hosts.txt",
-	"https://gist.githubusercontent.com/anudeepND/adac7982307fec6ee23605e281a57f1a/raw/5b8582b906a9497624c3f3187a49ebc23a9cf2fb/Test.txt",
-	"http://www.malwaredomainlist.com/hostslist/hosts.txt",
-	"https://ozguncagri.com/ios-filters/BlackListedDomains.txt",
-];
+welcomeInteraction.title = "Welcome"
+welcomeInteraction.message = [
+	"Welcome to Ozzy's Blacklist generator.",
+	"First thing to do fetch information about all lists.",
+	"Hit 'Continue' when you are ready to download it."
+].join("\n\n")
 
-const spotifyBlackList = "https://ozguncagri.com/ios-filters/SpotifyAdServices.txt"
+welcomeInteraction.addAction("Continue")
+await welcomeInteraction.presentAlert()
 
-const whiteListedDomains = [
-	"https://ozguncagri.com/ios-filters/WhiteListedDomains.txt",
-]
-
+// Define required variables and contants
 const ipRegex = /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/;
-
 const urlRegex = /((?:[\w-]+)(?:\.[\w-]+)+)(?:[\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/;
 
+let selectedBlacklists = []
+let isSpotifyIncluded = false
+let protectionTitle = 'No'
 let finalList = new Set;
 
+// Define parse and add urls function for blacklists
 function parseAndAddDomains(data) {
 	let lines = data.split(/\n/);
 
@@ -54,6 +45,7 @@ function parseAndAddDomains(data) {
 	}
 }
 
+// Define parse and remove urls function for whitelists
 function parseAndRemoveDomains(data) {
 	let lines = data.split(/\n/);
 
@@ -67,7 +59,7 @@ function parseAndRemoveDomains(data) {
 				continue partIter
 			}
 
-			// Add url
+			// Remove url
 			if (urlRegex.test(part)) {
 				finalList.delete(part)
 			}
@@ -75,30 +67,77 @@ function parseAndRemoveDomains(data) {
 	}
 }
 
+// First download all new list files' urls
+let allListsRequest = new Request("https://ozguncagri.com/ios-filters/allLists.json")
+let allListsData = await allListsRequest.loadJSON()
+
+let blacklistSelectionInteraction = new Alert()
+
+blacklistSelectionInteraction.title = "Select Protection"
+blacklistSelectionInteraction.message = [
+	"Great! Now; What kind of protection you want?",
+	"Minimal : Great for not breaking most things.",
+	"Full : May cause to not work some sites, apps or services"
+].join("\n\n")
+
+blacklistSelectionInteraction.addAction("Minimal")
+blacklistSelectionInteraction.addAction("Full")
+
+let blacklistSelectionInteractionAnswer = await blacklistSelectionInteraction.presentAlert()
+switch (blacklistSelectionInteractionAnswer) {
+	case 0:
+		protectionTitle = 'Minimal'
+		selectedBlacklists = allListsData.minimalBlacklists
+		break;
+	case 1:
+		protectionTitle = 'Full'
+		selectedBlacklists = allListsData.fullBlacklists
+		break;
+}
+
+let spotifyBlacklistInteraction = new Alert()
+spotifyBlacklistInteraction.title = "Block Spotify Ads"
+spotifyBlacklistInteraction.message = [
+	"Would you like to block Spotify ad service domains?",
+	"(It can break your experience if you are premium user)"
+].join("\n\n")
+spotifyBlacklistInteraction.addAction("Yes, Block Spotify Ads")
+spotifyBlacklistInteraction.addAction("No, Skip Blocking Spotify Ads")
+let spotifyBlacklistInteractionAnswer = await spotifyBlacklistInteraction.presentAlert()
+if (spotifyBlacklistInteractionAnswer === 0) {
+	isSpotifyIncluded = true
+	for (let listItem of allListsData.spotifyBlacklists) {
+		selectedBlacklists.push(listItem)
+	}
+}
+
+// Confirmation
+let confirmInteraction = new Alert()
+confirmInteraction.title = "Confirmation"
+confirmInteraction.message = [
+	`You are protected with this profile : '${protectionTitle}'`,
+	isSpotifyIncluded ? 'Spotify ads will be blocked' : 'Skip blocking spotify ads',
+	'Are sure about your selections?'
+].join("\n\n")
+confirmInteraction.addAction("Yes, Continue")
+confirmInteraction.addCancelAction("No, Cancel It")
+let confirmInteractionAnswer = await confirmInteraction.presentAlert()
+if (confirmInteractionAnswer === -1) {
+	return
+}
+
 // Start downloading and parsing hosts and blacklist files
-for (let url of blacklistedDomains) {
+for (let url of selectedBlacklists) {
 	let req = new Request(url)
 	let data = await req.loadString()
 	parseAndAddDomains(data)
 }
 
 // Start downloading and parsing whitelisted domains files
-for(let url of whiteListedDomains) {
+for(let url of allListsData.whitelists) {
 	let req = new Request(url)
 	let data = await req.loadString()
 	parseAndRemoveDomains(data)
-}
-
-let askSpotify = new Alert()
-askSpotify.title = "Block Spotify Ads"
-askSpotify.message = "Would you like to block spotify ad services?\n\n(It can break your experience if you are premium user)"
-askSpotify.addAction("Yes, Block Spotify Ads")
-askSpotify.addCancelAction("No, Skip Blocking Spotify Ads")
-let result = await askSpotify.presentAlert()
-if (result === 0) {
-	let req = new Request(spotifyBlackList)
-	let data = await req.loadString()
-	parseAndAddDomains(data)
 }
 
 // Write blacklist entries to file
@@ -111,7 +150,7 @@ fm.writeString(path, Array.from(finalList).sort().join("\n"))
 
 // Let user know what the hell happened
 let alert = new Alert()
-alert.title = "Update Succeed"
-alert.message = "Blacklist updated. Please restart DNSCloak's server."
+alert.title = "Successfully Generated"
+alert.message = "Your blacklist is successfully generated. Please restart DNSCloak's server."
 alert.addAction("Got It")
 alert.presentAlert()
